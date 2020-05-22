@@ -50,6 +50,7 @@ namespace _365Bot3.Bots
 
 
                 await MyStorage.WriteAsync(changes, cancellationToken);
+                
                 await turnContext.SendActivityAsync($"Your message was saved");
 
             }
