@@ -71,7 +71,7 @@ namespace _365Bot3.Bots
                 logItems.UtteranceList.Add(utterance);
                 logItems.TurnNumber++;
 
-                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {string.Join(", ", logItems.UtteranceList)}");
+                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {logItems.UtteranceList.Count()} messages long");
 
                 var changes = new Dictionary<string, object>();
                 {
@@ -95,7 +95,7 @@ namespace _365Bot3.Bots
                 logItems.UtteranceList.Add(utterance);
                 logItems.TurnNumber++;
 
-                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {string.Join(", ", logItems.UtteranceList)}");
+                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {logItems.UtteranceList.Count()} messages long");
 
                 var changes = new Dictionary<string, object>();
                 {
