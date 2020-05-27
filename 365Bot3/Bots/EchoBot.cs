@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Bot.Builder.Azure;
+using System.Linq;
 
 
 
@@ -31,35 +32,89 @@ namespace _365Bot3.Bots
            });
 
 
+        
 
+        public class UtteranceLog : IStoreItem
+        {
+            public List<deets> UtteranceList { get; } =  new List<deets>();
+            public int TurnNumber{get; set;} = 0;
+            public string ETag { get; set; } = "*";
+
+        }
+
+        
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
+            deets utterance = new deets();
+            utterance.MessageText = turnContext.Activity.Text;
+            utterance.MessageRecipient = turnContext.Activity.From.ToString();
+            utterance.MessageDate = turnContext.Activity.LocalTimestamp.ToString();
+            UtteranceLog logItems = null;
 
-            try 
+            try
             {
-                var messageDeets = new MessageRecord();
-                messageDeets.MessageTime = turnContext.Activity.Timestamp.ToString();
-                messageDeets.MesageText = turnContext.Activity.Text;
-                messageDeets.MessageFrom = turnContext.Activity.From.Name;
-                messageDeets.MessageTo = turnContext.Activity.Recipient.Name;
+
+                string[] utteranceList = { "UtteranceLog" };
+                logItems = MyStorage.ReadAsync<UtteranceLog>(utteranceList).Result?.FirstOrDefault().Value;
+
+            }
+            catch
+            {
+                // Inform the user an error occured.
+                await turnContext.SendActivityAsync("Sorry, something went wrong reading your stored messages!");
+
+            }
+
+            if (logItems is null)
+            {
+                logItems = new UtteranceLog();
+                logItems.UtteranceList.Add(utterance);
+                logItems.TurnNumber++;
+
+                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {string.Join(", ", logItems.UtteranceList)}");
 
                 var changes = new Dictionary<string, object>();
                 {
-                    changes.Add("MessageRecords", messageDeets);
+                    changes.Add("UtteranceLog", logItems);
+                };
+
+                try
+                {
+                    await MyStorage.WriteAsync(changes, cancellationToken);
+                    await turnContext.SendActivityAsync($"Your message was saved");
                 }
 
 
-                await MyStorage.WriteAsync(changes, cancellationToken);
-                
-                await turnContext.SendActivityAsync($"Your message was saved");
-
+                catch
+                {
+                    await turnContext.SendActivityAsync($"Your message was all fucked up");
+                }
             }
-            
-            catch
+            else
             {
-                await turnContext.SendActivityAsync($"Your message was all fucked up");
+                logItems.UtteranceList.Add(utterance);
+                logItems.TurnNumber++;
+
+                await turnContext.SendActivityAsync($"{logItems.TurnNumber}: The list is now: {string.Join(", ", logItems.UtteranceList)}");
+
+                var changes = new Dictionary<string, object>();
+                {
+                    changes.Add("UtteranceLog", logItems);
+
+                }
+                try
+                {
+                    // Save new list to your Storage.
+                    await MyStorage.WriteAsync(changes, cancellationToken);
+                    await turnContext.SendActivityAsync($"Your message was saved");
+                }
+                catch
+                {
+                    // Inform the user an error occured.
+                    await turnContext.SendActivityAsync("Sorry, something went wrong storing your message!");
+                }
             }
-}
+        }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
